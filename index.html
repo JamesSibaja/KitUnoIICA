@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard del Productor</title>
+  <style>
+    /* --- ESTILOS GLOBALES --- */
+    :root {
+      --bg: #f9fafb;
+      --primary: #2d6a4f;
+      --card-bg: #ffffff;
+      --text: #1a1a1a;
+      --muted: #6b7280;
+    }
+
+    body {
+      font-family: "Inter", "Segoe UI", sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    /* --- BOTÓN --- */
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    button:hover {
+      background-color: #1b4332;
+      transform: scale(1.03);
+    }
+
+    /* --- DASHBOARD --- */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      width: 90%;
+      max-width: 400px;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .label {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .timestamp {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 1rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dashboard del Productor 🌾</h1>
+    <p>Monitoreo rápido y simple</p>
+  </header>
+
+  <button id="refresh">🔄 Actualizar datos</button>
+
+  <div class="dashboard">
+    <div class="card">
+      <div class="label">Temperatura</div>
+      <div id="tempValue" class="value">-- °C</div>
+      <div id="tempTime" class="timestamp">Esperando datos...</div>
+    </div>
+
+    <div class="card">
+      <div class="label">Humedad del suelo</div>
+      <div id="soilValue" class="value">-- %</div>
+      <div id="soilTime" class="timestamp">Esperando datos...</div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 Monitoreo Agrícola
+  </footer>
+
+  <script>
+    // --- CONFIGURA ESTOS DATOS ---
+    const TOKEN = "TU_TOKEN_DE_SOLO_LECTURA";  // reemplaza por el tuyo
+    const PINS = { temp: "V1", soil: "V2" };   // ajusta según tus datastreams
+
+    const useProxy = true; // evita error de CORS usando allorigins
+
+    async function getBlynkValue(pin) {
+      const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&pin=${pin}`;
+      const finalUrl = useProxy
+        ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        : url;
+
+      const res = await fetch(finalUrl);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.text();
+    }
+
+    async function refreshData() {
+      const btn = document.getElementById("refresh");
+      btn.disabled = true;
+      btn.innerText = "Actualizando...";
+      try {
+        const [temp, soil] = await Promise.all([
+          getBlynkValue(PINS.temp),
+          getBlynkValue(PINS.soil)
+        ]);
+
+        document.getElementById("tempValue").innerText = `${temp} °C`;
+        document.getElementById("soilValue").innerText = `${soil} %`;
+
+        const ts = new Date().toLocaleTimeString();
+        document.getElementById("tempTime").innerText = "Actualizado a las " + ts;
+        document.getElementById("soilTime").innerText = "Actualizado a las " + ts;
+      } catch (err) {
+        document.getElementById("tempValue").innerText = "Error";
+        document.getElementById("soilValue").innerText = "Error";
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "🔄 Actualizar datos";
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", refreshData);
+    refreshData(); // carga inicial
+  </script>
+</body>
+</html>
