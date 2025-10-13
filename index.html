@@ -7,15 +7,17 @@
   <style>
     :root {
       --primary: #2d6a4f;
-      --bg: #f7f7f7;
+      --accent: #40916c;
+      --danger: #d00000;
+      --bg: #f5f6f7;
       --card-bg: #ffffff;
-      --muted: #777;
+      --muted: #666;
     }
 
     body {
       font-family: "Segoe UI", sans-serif;
       background-color: var(--bg);
-      color: #333;
+      color: #222;
       margin: 0;
       padding: 2rem;
       display: flex;
@@ -30,23 +32,8 @@
       color: var(--primary);
     }
 
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin: 0.5rem;
-    }
-
-    button:hover {
-      background-color: #1b4332;
-      transform: scale(1.03);
+    p {
+      color: var(--muted);
     }
 
     .dashboard {
@@ -64,16 +51,21 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       padding: 1.5rem;
       text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
     }
 
     .label {
-      font-size: 1rem;
+      font-size: 1.1rem;
       color: var(--muted);
       margin-bottom: 0.3rem;
     }
 
     .value {
-      font-size: 2.5rem;
+      font-size: 2.4rem;
       font-weight: 700;
       color: var(--primary);
     }
@@ -82,6 +74,29 @@
       margin-top: 0.5rem;
       font-size: 0.8rem;
       color: var(--muted);
+    }
+
+    /* --- SWITCH --- */
+    #toggleBtn {
+      border: none;
+      border-radius: 50px;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+
+    #toggleBtn.on {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    #toggleBtn.off {
+      background-color: #ccc;
+      color: #222;
     }
 
     footer {
@@ -94,22 +109,22 @@
 </head>
 <body>
   <header>
-    <h1>Dashboard del Kit Uno 🌾</h1>
-    <p>Monitoreo rápido y simple</p>
+    <h1>Dashboard del Productor 🌾</h1>
+    <p>Monitoreo automático en tiempo real</p>
   </header>
 
-  <button id="refresh">🔄 Actualizar datos</button>
-
   <div class="dashboard">
+    <!-- SENSOR -->
     <div class="card">
       <div class="label" id="sensorLabel">Sensor</div>
       <div id="sensorValue" class="value">--</div>
       <div id="sensorTime" class="timestamp">Esperando datos...</div>
     </div>
 
+    <!-- ACTUADOR -->
     <div class="card">
       <div class="label" id="actLabel">Actuador</div>
-      <button id="toggleBtn">Encender</button>
+      <button id="toggleBtn" class="off">Apagar</button>
       <div id="actState" class="timestamp">Estado: --</div>
     </div>
   </div>
@@ -123,13 +138,14 @@
     const TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
     const PINS = { actuator: "V0", sensor: "V1", typeAct: "V2", typeSens: "V3" };
     const useProxy = true;
+    const REFRESH_INTERVAL = 10000; // 10 segundos
 
-    // === FUNCIONES BÁSICAS ===
+    // === FUNCIONES API ===
     async function getBlynkValue(pin) {
       const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&pin=${pin}`;
       const finalUrl = useProxy ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` : url;
       const res = await fetch(finalUrl);
-      if (!res.ok) throw new Error("Error HTTP " + res.status);
+      if (!res.ok) throw new Error("HTTP " + res.status);
       return await res.text();
     }
 
@@ -140,7 +156,7 @@
       if (!res.ok) throw new Error("Error al actualizar valor");
     }
 
-    // === TRADUCCIÓN DE TIPOS ===
+    // === NOMBRES DE TIPOS ===
     const tipoActuador = {
       1: "Electroválvula 💧",
       2: "Ventilador 🌬️",
@@ -155,12 +171,8 @@
       4: "Presión"
     };
 
-    // === REFRESCAR DATOS ===
+    // === ACTUALIZAR DASHBOARD ===
     async function refreshData() {
-      const btn = document.getElementById("refresh");
-      btn.disabled = true;
-      btn.innerText = "Actualizando...";
-
       try {
         const [actValue, sensValue, typeA, typeS] = await Promise.all([
           getBlynkValue(PINS.actuator),
@@ -169,33 +181,39 @@
           getBlynkValue(PINS.typeSens)
         ]);
 
-        // Mostrar nombres según tipo
-        document.getElementById("actLabel").innerText = tipoActuador[typeA] || "Actuador desconocido";
-        document.getElementById("sensorLabel").innerText = tipoSensor[typeS] || "Sensor desconocido";
+        document.getElementById("actLabel").innerText = tipoActuador[typeA] || "Actuador";
+        document.getElementById("sensorLabel").innerText = tipoSensor[typeS] || "Sensor";
 
-        // Mostrar valor del sensor
-        document.getElementById("sensorValue").innerText =
+        const formatted =
           typeS == 1 ? `${sensValue} %` :
           typeS == 2 ? `${sensValue} °C` :
           sensValue;
+        document.getElementById("sensorValue").innerText = formatted;
 
         const ts = new Date().toLocaleTimeString();
         document.getElementById("sensorTime").innerText = "Actualizado a las " + ts;
 
-        // Mostrar estado del actuador
-        const estado = actValue == 1 ? "Encendido" : "Apagado";
-        document.getElementById("actState").innerText = "Estado: " + estado;
-        document.getElementById("toggleBtn").innerText = actValue == 1 ? "Apagar" : "Encender";
+        // Actualizar botón visual
+        const toggleBtn = document.getElementById("toggleBtn");
+        const actState = document.getElementById("actState");
+        if (actValue == 1) {
+          toggleBtn.classList.add("on");
+          toggleBtn.classList.remove("off");
+          toggleBtn.textContent = "Encendido";
+          actState.innerText = "Estado: Encendido";
+        } else {
+          toggleBtn.classList.add("off");
+          toggleBtn.classList.remove("on");
+          toggleBtn.textContent = "Apagado";
+          actState.innerText = "Estado: Apagado";
+        }
       } catch (err) {
         console.error(err);
         document.getElementById("sensorValue").innerText = "Error";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "🔄 Actualizar datos";
       }
     }
 
-    // === CAMBIAR ESTADO DEL ACTUADOR ===
+    // === SWITCH ACTUADOR ===
     document.getElementById("toggleBtn").addEventListener("click", async () => {
       try {
         const current = await getBlynkValue(PINS.actuator);
@@ -207,8 +225,9 @@
       }
     });
 
-    document.getElementById("refresh").addEventListener("click", refreshData);
-    refreshData(); // carga inicial
+    // === AUTO-REFRESCO ===
+    refreshData();
+    setInterval(refreshData, REFRESH_INTERVAL);
   </script>
 </body>
 </html>
