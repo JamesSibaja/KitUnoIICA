@@ -1,34 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard del Productor</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard del Productor 🌾</title>
   <style>
-    /* --- ESTILOS GLOBALES --- */
     :root {
-      --bg: #f9fafb;
       --primary: #2d6a4f;
+      --bg: #f7f7f7;
       --card-bg: #ffffff;
-      --text: #1a1a1a;
-      --muted: #6b7280;
+      --muted: #777;
     }
 
     body {
-      font-family: "Inter", "Segoe UI", sans-serif;
+      font-family: "Segoe UI", sans-serif;
       background-color: var(--bg);
+      color: #333;
       margin: 0;
-      padding: 0;
+      padding: 2rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      color: var(--text);
-    }
-
-    header {
-      text-align: center;
-      padding: 2rem 1rem 1rem;
     }
 
     header h1 {
@@ -37,7 +30,6 @@
       color: var(--primary);
     }
 
-    /* --- BOTÓN --- */
     button {
       background-color: var(--primary);
       color: white;
@@ -49,6 +41,7 @@
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin: 0.5rem;
     }
 
     button:hover {
@@ -56,7 +49,6 @@
       transform: scale(1.03);
     }
 
-    /* --- DASHBOARD --- */
     .dashboard {
       display: grid;
       grid-template-columns: 1fr;
@@ -102,7 +94,7 @@
 </head>
 <body>
   <header>
-    <h1>Dashboard del Productor 🌾</h1>
+    <h1>Dashboard del Kit Uno 🌾</h1>
     <p>Monitoreo rápido y simple</p>
   </header>
 
@@ -110,15 +102,15 @@
 
   <div class="dashboard">
     <div class="card">
-      <div class="label">Temperatura</div>
-      <div id="tempValue" class="value">-- °C</div>
-      <div id="tempTime" class="timestamp">Esperando datos...</div>
+      <div class="label" id="sensorLabel">Sensor</div>
+      <div id="sensorValue" class="value">--</div>
+      <div id="sensorTime" class="timestamp">Esperando datos...</div>
     </div>
 
     <div class="card">
-      <div class="label">Humedad del suelo</div>
-      <div id="soilValue" class="value">-- %</div>
-      <div id="soilTime" class="timestamp">Esperando datos...</div>
+      <div class="label" id="actLabel">Actuador</div>
+      <button id="toggleBtn">Encender</button>
+      <div id="actState" class="timestamp">Estado: --</div>
     </div>
   </div>
 
@@ -127,48 +119,93 @@
   </footer>
 
   <script>
-    // --- CONFIGURA ESTOS DATOS ---
-    const TOKEN = "TU_TOKEN_DE_SOLO_LECTURA";  // reemplaza por el tuyo
-    const PINS = { temp: "V1", soil: "V2" };   // ajusta según tus datastreams
+    // === CONFIGURACIÓN ===
+    const TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
+    const PINS = { actuator: "V0", sensor: "V1", typeAct: "V2", typeSens: "V3" };
+    const useProxy = true;
 
-    const useProxy = true; // evita error de CORS usando allorigins
-
+    // === FUNCIONES BÁSICAS ===
     async function getBlynkValue(pin) {
       const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&pin=${pin}`;
-      const finalUrl = useProxy
-        ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-        : url;
-
+      const finalUrl = useProxy ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` : url;
       const res = await fetch(finalUrl);
-      if (!res.ok) throw new Error("HTTP " + res.status);
+      if (!res.ok) throw new Error("Error HTTP " + res.status);
       return await res.text();
     }
 
+    async function setBlynkValue(pin, value) {
+      const url = `https://blynk.cloud/external/api/update?token=${TOKEN}&${pin}=${value}`;
+      const finalUrl = useProxy ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` : url;
+      const res = await fetch(finalUrl);
+      if (!res.ok) throw new Error("Error al actualizar valor");
+    }
+
+    // === TRADUCCIÓN DE TIPOS ===
+    const tipoActuador = {
+      1: "Electroválvula 💧",
+      2: "Ventilador 🌬️",
+      3: "Bomba de agua 🚿",
+      4: "Luz 💡"
+    };
+
+    const tipoSensor = {
+      1: "Humedad del suelo",
+      2: "Temperatura",
+      3: "Luz solar",
+      4: "Presión"
+    };
+
+    // === REFRESCAR DATOS ===
     async function refreshData() {
       const btn = document.getElementById("refresh");
       btn.disabled = true;
       btn.innerText = "Actualizando...";
+
       try {
-        const [temp, soil] = await Promise.all([
-          getBlynkValue(PINS.temp),
-          getBlynkValue(PINS.soil)
+        const [actValue, sensValue, typeA, typeS] = await Promise.all([
+          getBlynkValue(PINS.actuator),
+          getBlynkValue(PINS.sensor),
+          getBlynkValue(PINS.typeAct),
+          getBlynkValue(PINS.typeSens)
         ]);
 
-        document.getElementById("tempValue").innerText = `${temp} °C`;
-        document.getElementById("soilValue").innerText = `${soil} %`;
+        // Mostrar nombres según tipo
+        document.getElementById("actLabel").innerText = tipoActuador[typeA] || "Actuador desconocido";
+        document.getElementById("sensorLabel").innerText = tipoSensor[typeS] || "Sensor desconocido";
+
+        // Mostrar valor del sensor
+        document.getElementById("sensorValue").innerText =
+          typeS == 1 ? `${sensValue} %` :
+          typeS == 2 ? `${sensValue} °C` :
+          sensValue;
 
         const ts = new Date().toLocaleTimeString();
-        document.getElementById("tempTime").innerText = "Actualizado a las " + ts;
-        document.getElementById("soilTime").innerText = "Actualizado a las " + ts;
+        document.getElementById("sensorTime").innerText = "Actualizado a las " + ts;
+
+        // Mostrar estado del actuador
+        const estado = actValue == 1 ? "Encendido" : "Apagado";
+        document.getElementById("actState").innerText = "Estado: " + estado;
+        document.getElementById("toggleBtn").innerText = actValue == 1 ? "Apagar" : "Encender";
       } catch (err) {
-        document.getElementById("tempValue").innerText = "Error";
-        document.getElementById("soilValue").innerText = "Error";
         console.error(err);
+        document.getElementById("sensorValue").innerText = "Error";
       } finally {
         btn.disabled = false;
         btn.innerText = "🔄 Actualizar datos";
       }
     }
+
+    // === CAMBIAR ESTADO DEL ACTUADOR ===
+    document.getElementById("toggleBtn").addEventListener("click", async () => {
+      try {
+        const current = await getBlynkValue(PINS.actuator);
+        const newValue = current == 1 ? 0 : 1;
+        await setBlynkValue(PINS.actuator, newValue);
+        refreshData();
+      } catch (err) {
+        console.error("Error al cambiar estado:", err);
+      }
+    });
 
     document.getElementById("refresh").addEventListener("click", refreshData);
     refreshData(); // carga inicial
