@@ -110,7 +110,7 @@
 <body>
   <header>
     <h1>Dashboard del Productor 🌾</h1>
-    <p>Monitoreo automático en tiempo real</p>
+    <p>Monitoreo y control en tiempo real</p>
   </header>
 
   <div class="dashboard">
@@ -129,21 +129,29 @@
     </div>
   </div>
 
-  <footer>
-    © 2025 Monitoreo Agrícola
-  </footer>
+  <footer>© 2025 Monitoreo Agrícola</footer>
 
   <script>
-    // === CONFIGURACIÓN ===
+    // === CONFIGURACIÓN DE BLYNK ===
     const TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
-    const PINS = { actuator: "V0", sensor: "V1", typeAct: "V2", typeSens: "V3" };
-    const useProxy = true;
-    const REFRESH_INTERVAL = 10000; // 10 segundos
+    const useProxy = true; // para evitar CORS
+    const REFRESH_INTERVAL = 5000; // cada 5 segundos
 
-    // === FUNCIONES API ===
+    // === Mapeo de pines (según tu código ESP32) ===
+    const PINS = {
+      tipoSensor: "V0",   // nombre del sensor
+      valorSensor: "V2",  // valor principal del sensor
+      auxSensor: "V3",    // valor auxiliar (ej: humedad, fuente)
+      tipoActuador: "V1", // nombre del actuador
+      estadoActuador: "V4"// encendido/apagado
+    };
+
+    // === FUNCIONES DE API ===
     async function getBlynkValue(pin) {
       const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&pin=${pin}`;
-      const finalUrl = useProxy ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` : url;
+      const finalUrl = useProxy
+        ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        : url;
       const res = await fetch(finalUrl);
       if (!res.ok) throw new Error("HTTP " + res.status);
       return await res.text();
@@ -151,74 +159,76 @@
 
     async function setBlynkValue(pin, value) {
       const url = `https://blynk.cloud/external/api/update?token=${TOKEN}&${pin}=${value}`;
-      const finalUrl = useProxy ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` : url;
+      const finalUrl = useProxy
+        ? `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        : url;
       const res = await fetch(finalUrl);
       if (!res.ok) throw new Error("Error al actualizar valor");
     }
 
-    // === NOMBRES DE TIPOS ===
-    const tipoActuador = {
-      1: "Electroválvula 💧",
-      2: "Ventilador 🌬️",
-      3: "Bomba de agua 🚿",
-      4: "Luz 💡"
-    };
-
-    const tipoSensor = {
-      1: "Humedad del suelo",
-      2: "Temperatura",
-      3: "Luz solar",
-      4: "Presión"
-    };
-
     // === ACTUALIZAR DASHBOARD ===
     async function refreshData() {
       try {
-        const [actValue, sensValue, typeA, typeS] = await Promise.all([
-          getBlynkValue(PINS.actuator),
-          getBlynkValue(PINS.sensor),
-          getBlynkValue(PINS.typeAct),
-          getBlynkValue(PINS.typeSens)
+        // Leer todos los datos de Blynk en paralelo
+        const [tipoSens, valorSens, auxSens, tipoAct, estadoAct] = await Promise.all([
+          getBlynkValue(PINS.tipoSensor),
+          getBlynkValue(PINS.valorSensor),
+          getBlynkValue(PINS.auxSensor),
+          getBlynkValue(PINS.tipoActuador),
+          getBlynkValue(PINS.estadoActuador)
         ]);
 
-        document.getElementById("actLabel").innerText = tipoActuador[typeA] || "Actuador";
-        document.getElementById("sensorLabel").innerText = tipoSensor[typeS] || "Sensor";
+        // --- SENSOR ---
+        document.getElementById("sensorLabel").innerText =
+          tipoSens || "Sensor desconocido";
 
-        const formatted =
-          typeS == 1 ? `${sensValue} %` :
-          typeS == 2 ? `${sensValue} °C` :
-          sensValue;
-        document.getElementById("sensorValue").innerText = formatted;
+        const formattedValue =
+          valorSens && !isNaN(valorSens)
+            ? `${parseFloat(valorSens).toFixed(1)}`
+            : valorSens;
 
-        const ts = new Date().toLocaleTimeString();
-        document.getElementById("sensorTime").innerText = "Actualizado a las " + ts;
+        const units =
+          tipoSens.includes("Temp") ? "°C" :
+          tipoSens.includes("Humedad") ? "%" :
+          tipoSens.includes("Presión") ? "hPa" :
+          tipoSens.includes("Luz") ? "lx" :
+          "";
 
-        // Actualizar botón visual
+        document.getElementById("sensorValue").innerText =
+          formattedValue + " " + units;
+
+        document.getElementById("sensorTime").innerText =
+          "Actualizado: " + new Date().toLocaleTimeString();
+
+        // --- ACTUADOR ---
+        document.getElementById("actLabel").innerText =
+          tipoAct || "Actuador";
+
         const toggleBtn = document.getElementById("toggleBtn");
         const actState = document.getElementById("actState");
-        if (actValue == 1) {
+        if (estadoAct == 1 || estadoAct === "1") {
           toggleBtn.classList.add("on");
           toggleBtn.classList.remove("off");
           toggleBtn.textContent = "Encendido";
-          actState.innerText = "Estado: Encendido";
+          actState.innerText = "Estado: Encendido ✅";
         } else {
           toggleBtn.classList.add("off");
           toggleBtn.classList.remove("on");
           toggleBtn.textContent = "Apagado";
-          actState.innerText = "Estado: Apagado";
+          actState.innerText = "Estado: Apagado ⛔";
         }
       } catch (err) {
-        console.error(err);
-        document.getElementById("sensorValue").innerText = "Error";
+        console.error("Error al obtener datos:", err);
+        document.getElementById("sensorValue").innerText = "Error de conexión";
       }
     }
 
     // === SWITCH ACTUADOR ===
     document.getElementById("toggleBtn").addEventListener("click", async () => {
       try {
-        const current = await getBlynkValue(PINS.actuator);
+        const current = await getBlynkValue(PINS.estadoActuador);
         const newValue = current == 1 ? 0 : 1;
-        await setBlynkValue(PINS.actuator, newValue);
+        await setBlynkValue(PINS.estadoActuador, newValue);
         refreshData();
       } catch (err) {
         console.error("Error al cambiar estado:", err);
