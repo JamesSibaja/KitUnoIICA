@@ -132,21 +132,21 @@
   <footer>© 2025 Monitoreo Agrícola</footer>
 
   <script>
-    // === CONFIGURACIÓN DE BLYNK ===
+    // === CONFIGURACIÓN ===
     const TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
-    const useProxy = true; // para evitar CORS
-    const REFRESH_INTERVAL = 5000; // cada 5 segundos
+    const useProxy = true;
+    const REFRESH_INTERVAL = 2000; // 2 segundos
 
-    // === Mapeo de pines (según tu código ESP32) ===
+    // === PINES VIRTUALES (según tu código ESP32) ===
     const PINS = {
-      tipoSensor: "V0",   // nombre del sensor
-      valorSensor: "V2",  // valor principal del sensor
-      auxSensor: "V3",    // valor auxiliar (ej: humedad, fuente)
-      tipoActuador: "V1", // nombre del actuador
-      estadoActuador: "V4"// encendido/apagado
+      actuadorEstado: "V0", // on/off
+      sensorValor: "V1",    // lectura principal
+      actuadorTipo: "V2",   // nombre del actuador
+      sensorTipo: "V3",     // nombre del sensor
+      sensorExtra: "V4"     // lectura auxiliar (ej: humedad)
     };
 
-    // === FUNCIONES DE API ===
+    // === FUNCIONES API ===
     async function getBlynkValue(pin) {
       const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&pin=${pin}`;
       const finalUrl = useProxy
@@ -169,43 +169,43 @@
     // === ACTUALIZAR DASHBOARD ===
     async function refreshData() {
       try {
-        // Leer todos los datos de Blynk en paralelo
-        const [tipoSens, valorSens, auxSens, tipoAct, estadoAct] = await Promise.all([
-          getBlynkValue(PINS.tipoSensor),
-          getBlynkValue(PINS.valorSensor),
-          getBlynkValue(PINS.auxSensor),
-          getBlynkValue(PINS.tipoActuador),
-          getBlynkValue(PINS.estadoActuador)
+        const [estadoAct, valorSens, tipoAct, tipoSens, extraSens] = await Promise.all([
+          getBlynkValue(PINS.actuadorEstado),
+          getBlynkValue(PINS.sensorValor),
+          getBlynkValue(PINS.actuadorTipo),
+          getBlynkValue(PINS.sensorTipo),
+          getBlynkValue(PINS.sensorExtra)
         ]);
 
         // --- SENSOR ---
-        document.getElementById("sensorLabel").innerText =
-          tipoSens || "Sensor desconocido";
+        const sensorLabel = document.getElementById("sensorLabel");
+        const sensorValue = document.getElementById("sensorValue");
 
-        const formattedValue =
-          valorSens && !isNaN(valorSens)
-            ? `${parseFloat(valorSens).toFixed(1)}`
-            : valorSens;
+        sensorLabel.innerText = tipoSens || "Sensor";
 
-        const units =
-          tipoSens.includes("Temp") ? "°C" :
-          tipoSens.includes("Humedad") ? "%" :
-          tipoSens.includes("Presión") ? "hPa" :
-          tipoSens.includes("Luz") ? "lx" :
-          "";
+        let valueText = valorSens;
+        if (!isNaN(valorSens)) {
+          valueText = parseFloat(valorSens).toFixed(1);
+          if (tipoSens && tipoSens.includes("Temp")) valueText += " °C";
+          else if (tipoSens && tipoSens.includes("Hum")) valueText += " %";
+        }
 
-        document.getElementById("sensorValue").innerText =
-          formattedValue + " " + units;
+        // Si hay un valor extra, mostrarlo junto al principal
+        if (extraSens && !isNaN(extraSens)) {
+          valueText += ` / ${parseFloat(extraSens).toFixed(1)}%`;
+        }
 
+        sensorValue.innerText = valueText;
         document.getElementById("sensorTime").innerText =
           "Actualizado: " + new Date().toLocaleTimeString();
 
         // --- ACTUADOR ---
-        document.getElementById("actLabel").innerText =
-          tipoAct || "Actuador";
+        const actLabel = document.getElementById("actLabel");
+        actLabel.innerText = tipoAct || "Actuador";
 
         const toggleBtn = document.getElementById("toggleBtn");
         const actState = document.getElementById("actState");
+
         if (estadoAct == 1 || estadoAct === "1") {
           toggleBtn.classList.add("on");
           toggleBtn.classList.remove("off");
@@ -223,19 +223,19 @@
       }
     }
 
-    // === SWITCH ACTUADOR ===
+    // === CONTROL MANUAL DEL ACTUADOR ===
     document.getElementById("toggleBtn").addEventListener("click", async () => {
       try {
-        const current = await getBlynkValue(PINS.estadoActuador);
+        const current = await getBlynkValue(PINS.actuadorEstado);
         const newValue = current == 1 ? 0 : 1;
-        await setBlynkValue(PINS.estadoActuador, newValue);
+        await setBlynkValue(PINS.actuadorEstado, newValue);
         refreshData();
       } catch (err) {
         console.error("Error al cambiar estado:", err);
       }
     });
 
-    // === AUTO-REFRESCO ===
+    // === AUTO REFRESCO ===
     refreshData();
     setInterval(refreshData, REFRESH_INTERVAL);
   </script>
