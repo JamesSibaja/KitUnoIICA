@@ -2,187 +2,105 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard Productor 🌾</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Agrícola IoT</title>
 <style>
-  :root {
-    --primary:#2d6a4f;
-    --accent:#40916c;
-    --muted:#666;
-    --bg:#f5f6f7;
-    --card:#fff;
+  body {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #e3f2fd, #c8e6c9);
+    color: #333;
+    margin: 0;
+    padding: 0;
   }
-  body{
-    font-family:"Segoe UI",Tahoma,sans-serif;
-    background:var(--bg);
-    color:#222;
-    margin:0;
-    padding:2rem;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    min-height:100vh;
+  .container {
+    margin-top: 40px;
   }
-  header h1{margin:0;color:var(--primary);font-size:1.6rem}
-  header p{margin:.25rem 0 0;color:var(--muted)}
-  .grid{width:95%;max-width:720px;margin-top:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-  .card{background:var(--card);border-radius:12px;padding:1rem;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center}
-  .label{font-size:0.95rem;color:var(--muted)}
-  .title{font-weight:700;font-size:1.05rem;color:var(--primary);margin-top:.25rem}
-  .value{font-size:2rem;font-weight:800;margin-top:.5rem;color:var(--primary)}
-  .small{font-size:0.82rem;color:var(--muted);margin-top:.5rem}
-  .controls{width:100%;display:flex;flex-direction:column;gap:.5rem}
-  .btn{appearance:none;border:0;border-radius:10px;padding:.8rem 1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,0.08);width:100%;}
-  .btn.on{background:var(--accent);color:white}
-  .btn.off{background:#d9d9d9;color:#222}
-  footer{margin-top:1.2rem;color:var(--muted);font-size:0.8rem}
-  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+  .card {
+    display: inline-block;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 20px 40px;
+    margin: 20px;
+    transition: 0.3s;
+  }
+  .card:hover {
+    transform: scale(1.05);
+  }
+  h2 {
+    margin: 10px 0;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #45a049;
+  }
 </style>
 </head>
 <body>
-<header>
-  <h1>Dashboard del Productor 🌾</h1>
-  <p>Lectura en tiempo real — conectado al ESP32</p>
-</header>
+  <div class="container">
+    <h1>🌱 Panel de Monitoreo Agrícola IoT</h1>
 
-<div class="grid">
-  <!-- Tarjeta: Sensor -->
-  <div class="card">
-    <div class="label">Sensor</div>
-    <div id="sensorTitle" class="title">--</div>
-    <div id="sensorValue" class="value">--</div>
-    <div id="sensorAux" class="small">--</div>
-    <div id="sensorTime" class="small">Esperando datos...</div>
-  </div>
+    <div class="card">
+      <h2>🌡️ Temperatura</h2>
+      <p id="temp">-- °C</p>
+    </div>
 
-  <!-- Tarjeta: Actuador -->
-  <div class="card">
-    <div class="label">Actuador</div>
-    <div id="actTitle" class="title">--</div>
-    <div class="controls" style="width:100%;margin-top:.6rem">
-      <button id="actToggle" class="btn off">Apagado</button>
-      <div id="actState" class="small">Estado: --</div>
+    <div class="card">
+      <h2>💧 Humedad</h2>
+      <p id="hum">-- %</p>
+    </div>
+
+    <div class="card">
+      <h2>🔌 Actuador</h2>
+      <button id="btnActuador" onclick="toggleActuador()">Cargar...</button>
     </div>
   </div>
-</div>
 
-<footer>© 2025 - Monitoreo Agrícola — Dashboard para productores</footer>
+  <script>
+    const TOKEN = "zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
 
-<script>
-  // ================= CONFIGURACIÓN =================
-  const BLYNK_TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
-  const REFRESH_MS = 2000; // refresco cada 2s
+    async function actualizarDatos() {
+      try {
+        // Leer temperatura (V1) y humedad (V2)
+        const [tempRes, humRes, actRes] = await Promise.all([
+          fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`),
+          fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`),
+          fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V4`)
+        ]);
 
-  // Pines virtuales
-  const P = {
-    V_SENSOR_ID: "V0",    // tipo de sensor
-    V_SENSOR_TEMP: "V2",  // temperatura o valor primario
-    V_SENSOR_HUM: "V3",   // humedad o valor secundario
-    V_ACT_STATE: "V4"     // actuador
-  };
+        const temp = await tempRes.text();
+        const hum = await humRes.text();
+        const act = await actRes.text();
 
-  // ================= UTILIDADES =================
-  async function blynkGet(pin){
-    const url = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&${pin}`;
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    return (await res.text()).trim();
-  }
-
-  async function blynkSet(pin,value){
-    const url = `https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${pin}=${value}`;
-    const res = await fetch(url,{method:"GET"});
-    if(!res.ok) throw new Error("Update failed "+res.status);
-    return true;
-  }
-
-  // ================= DOM =================
-  const sensorTitle = document.getElementById("sensorTitle");
-  const sensorValue = document.getElementById("sensorValue");
-  const sensorAux = document.getElementById("sensorAux");
-  const sensorTime = document.getElementById("sensorTime");
-  const actTitle = document.getElementById("actTitle");
-  const actToggle = document.getElementById("actToggle");
-  const actState = document.getElementById("actState");
-
-  // ================= FORMATEO =================
-  function formatSensor(id,valPrimary,valAux){
-    let title = id || "Sensor";
-    let main="--", aux="";
-    const p = parseFloat(valPrimary);
-    const a = parseFloat(valAux);
-
-    if(title.toUpperCase().includes("DHT") || title.toUpperCase().includes("TEMP")){
-      main = !isNaN(p)? p.toFixed(1)+" °C":"--";
-      aux = !isNaN(a)? "Hum: "+a.toFixed(1)+" %":"";
-    } else if(title.toUpperCase().includes("HUMEDAD") || title.toUpperCase().includes("HUM")){
-      main = !isNaN(a)? a.toFixed(1)+" %":"--";
-    } else {
-      main = valPrimary||"--";
-      aux = valAux||"";
-    }
-    return {title, main, aux};
-  }
-
-  // ================= REFRESH UI =================
-  async function refreshOnce(){
-    try{
-      const [id,valTemp,valHum,act] = await Promise.all([
-        blynkGet(P.V_SENSOR_ID),
-        blynkGet(P.V_SENSOR_TEMP),
-        blynkGet(P.V_SENSOR_HUM),
-        blynkGet(P.V_ACT_STATE)
-      ]);
-
-      // Sensor
-      const parsed = formatSensor(id,valTemp,valHum);
-      sensorTitle.textContent = parsed.title;
-      sensorValue.textContent = parsed.main;
-      sensorAux.textContent = parsed.aux;
-      sensorTime.textContent = "Actualizado: "+new Date().toLocaleTimeString();
-
-      // Actuador
-      actTitle.textContent = "Actuador";
-      const on = (act==="1" || act==="true");
-      if(on){
-        actToggle.classList.add("on"); actToggle.classList.remove("off");
-        actToggle.textContent = "Encendido";
-        actState.textContent = "Estado: Encendido ✅";
-      } else {
-        actToggle.classList.add("off"); actToggle.classList.remove("on");
-        actToggle.textContent = "Apagado";
-        actState.textContent = "Estado: Apagado ⛔";
+        document.getElementById("temp").innerText = temp + " °C";
+        document.getElementById("hum").innerText = hum + " %";
+        document.getElementById("btnActuador").innerText = act === "1" ? "Apagar" : "Encender";
+        document.getElementById("btnActuador").style.background = act === "1" ? "#d32f2f" : "#4CAF50";
+      } catch (err) {
+        console.error("Error al obtener datos:", err);
       }
-
-    } catch(err){
-      console.error("Error refrescando Blynk:",err);
-      sensorTitle.textContent="Sensor (error)";
-      sensorValue.textContent="--";
-      sensorAux.textContent="";
-      sensorTime.textContent="Error: "+(err.message||"");
     }
-  }
 
-  // ================= BOTÓN ACTUADOR =================
-  let toggling=false;
-  actToggle.addEventListener("click",async ()=>{
-    if(toggling) return;
-    toggling=true;
-    try{
-      const cur = await blynkGet(P.V_ACT_STATE);
-      const newVal = (cur==="1"||cur==="true")?0:1;
-      await blynkSet(P.V_ACT_STATE,newVal);
-      await refreshOnce(); // actualizar UI inmediatamente
-    }catch(err){
-      console.error("Error cambiando actuador:",err);
-      actState.textContent="Error al cambiar";
-    }finally{toggling=false;}
-  });
+    async function toggleActuador() {
+      const actBtn = document.getElementById("btnActuador");
+      const currentState = actBtn.innerText === "Apagar" ? 1 : 0;
+      const newState = currentState === 1 ? 0 : 1;
 
-  // ================= AUTO-REFRESH =================
-  refreshOnce();
-  setInterval(refreshOnce,REFRESH_MS);
+      await fetch(`https://blynk.cloud/external/api/update?token=${TOKEN}&V4=${newState}`);
+      actualizarDatos();
+    }
 
-</script>
+    actualizarDatos();
+    setInterval(actualizarDatos, 3000); // refrescar cada 3s
+  </script>
 </body>
 </html>
