@@ -1,200 +1,188 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard del Productor 🌾</title>
-  <style>
-    :root {
-      --primary: #2d6a4f;
-      --accent: #40916c;
-      --muted: #666;
-      --bg: #f5f6f7;
-      --card: #fff;
-      --danger: #d62828;
-      --success: #2a9d8f;
-    }
-    body{
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: var(--bg);
-      color:#222;
-      margin:0;
-      padding:2rem;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      min-height:100vh;
-    }
-    header h1{margin:0;color:var(--primary);font-size:1.8rem}
-    header p{margin:.25rem 0 0;color:var(--muted)}
-    .grid{width:95%;max-width:720px;margin-top:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-    .card{background:var(--card);border-radius:12px;padding:1.2rem;box-shadow:0 6px 18px rgba(0,0,0,0.08);display:flex;flex-direction:column;align-items:center;transition:0.3s all}
-    .label{font-size:0.95rem;color:var(--muted)}
-    .title{font-weight:700;font-size:1.2rem;color:var(--primary);margin-top:.25rem}
-    .value{font-size:2rem;font-weight:800;margin-top:.5rem;color:var(--accent)}
-    .small{font-size:0.85rem;color:var(--muted);margin-top:.5px}
-    .controls{width:100%;display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
-    .btn{
-      appearance:none;border:0;border-radius:12px;padding:.8rem 1rem;font-weight:700;cursor:pointer;
-      box-shadow:0 6px 14px rgba(0,0,0,0.1);width:100%;transition:0.2s all;
-    }
-    .btn.on{background:var(--success);color:white}
-    .btn.off{background:var(--danger);color:white}
-    .badge{background:#eef6f1;color:var(--primary);padding:.25rem .5rem;border-radius:8px;font-weight:700}
-    footer{margin-top:1.5rem;color:var(--muted);font-size:0.8rem}
-    @media(max-width:700px){
-      .grid{grid-template-columns:1fr}
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Productor 🌾</title>
+<style>
+  :root {
+    --primary:#2d6a4f;
+    --accent:#40916c;
+    --muted:#666;
+    --bg:#f5f6f7;
+    --card:#fff;
+  }
+  body{
+    font-family:"Segoe UI",Tahoma,sans-serif;
+    background:var(--bg);
+    color:#222;
+    margin:0;
+    padding:2rem;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+  }
+  header h1{margin:0;color:var(--primary);font-size:1.6rem}
+  header p{margin:.25rem 0 0;color:var(--muted)}
+  .grid{width:95%;max-width:720px;margin-top:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .card{background:var(--card);border-radius:12px;padding:1rem;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center}
+  .label{font-size:0.95rem;color:var(--muted)}
+  .title{font-weight:700;font-size:1.05rem;color:var(--primary);margin-top:.25rem}
+  .value{font-size:2rem;font-weight:800;margin-top:.5rem;color:var(--primary)}
+  .small{font-size:0.82rem;color:var(--muted);margin-top:.5rem}
+  .controls{width:100%;display:flex;flex-direction:column;gap:.5rem}
+  .btn{appearance:none;border:0;border-radius:10px;padding:.8rem 1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,0.08);width:100%;}
+  .btn.on{background:var(--accent);color:white}
+  .btn.off{background:#d9d9d9;color:#222}
+  footer{margin-top:1.2rem;color:var(--muted);font-size:0.8rem}
+  @media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Dashboard del Productor 🌾</h1>
-    <p>Lectura en tiempo real — conectado al ESP32</p>
-  </header>
+<header>
+  <h1>Dashboard del Productor 🌾</h1>
+  <p>Lectura en tiempo real — conectado al ESP32</p>
+</header>
 
-  <div class="grid">
-    <!-- Tarjeta: Sensor -->
-    <div class="card" id="cardSensor">
-      <div class="label">Sensor</div>
-      <div id="sensorTitle" class="title">--</div>
-      <div id="sensorValue" class="value">--</div>
-      <div id="sensorAux" class="small">--</div>
-      <div id="sensorTime" class="small">Esperando datos...</div>
-    </div>
-
-    <!-- Tarjeta: Actuador -->
-    <div class="card" id="cardActuador">
-      <div class="label">Actuador</div>
-      <div id="actTitle" class="title">--</div>
-      <div class="controls">
-        <button id="actToggle" class="btn off">Apagado</button>
-        <div id="actState" class="small">Estado: --</div>
-        <div id="actInfo" class="small" style="color:var(--muted)">Tocar para cambiar</div>
-      </div>
-    </div>
+<div class="grid">
+  <!-- Tarjeta: Sensor -->
+  <div class="card">
+    <div class="label">Sensor</div>
+    <div id="sensorTitle" class="title">--</div>
+    <div id="sensorValue" class="value">--</div>
+    <div id="sensorAux" class="small">--</div>
+    <div id="sensorTime" class="small">Esperando datos...</div>
   </div>
 
-  <footer>© 2025 - Monitoreo Agrícola — Práctico para productores</footer>
+  <!-- Tarjeta: Actuador -->
+  <div class="card">
+    <div class="label">Actuador</div>
+    <div id="actTitle" class="title">--</div>
+    <div class="controls" style="width:100%;margin-top:.6rem">
+      <button id="actToggle" class="btn off">Apagado</button>
+      <div id="actState" class="small">Estado: --</div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    const BLYNK_TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
-    const USE_PROXY = true;
-    const PROXY = "https://api.allorigins.win/raw?url=";
-    const REFRESH_MS = 2000;
+<footer>© 2025 - Monitoreo Agrícola — Dashboard para productores</footer>
 
-    const P = {
-      V_SENSOR_ID: "V0",
-      V_SENSOR_VAL: "V2",
-      V_SENSOR_AUX: "V3",
-      V_ACT_STATE: "V4",
-      V_ACT_ID: "V1"
-    };
+<script>
+  // ================= CONFIGURACIÓN =================
+  const BLYNK_TOKEN = "zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
+  const REFRESH_MS = 2000; // cada 2s
 
-    function makeUrl(pin){
-      const base = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&pin=${pin}`;
-      return USE_PROXY ? PROXY + encodeURIComponent(base) : base;
+  // Pines virtuales del ESP32
+  const P = {
+    V_SENSOR_ID: "V0",
+    V_SENSOR_TEMP: "V1",
+    V_SENSOR_HUM: "V2",
+    V_ACT_STATE: "V4"
+  };
+
+  // ================= UTILIDADES =================
+  async function blynkGet(pin){
+    const url = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&pin=${pin}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const text = await res.text();
+    return text.trim();
+  }
+
+  async function blynkSet(pin,value){
+    const url = `https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${pin}=${value}`;
+    const res = await fetch(url,{method:"GET"});
+    if(!res.ok) throw new Error("Update failed "+res.status);
+    return true;
+  }
+
+  // ================= DOM =================
+  const sensorTitle = document.getElementById("sensorTitle");
+  const sensorValue = document.getElementById("sensorValue");
+  const sensorAux = document.getElementById("sensorAux");
+  const sensorTime = document.getElementById("sensorTime");
+  const actTitle = document.getElementById("actTitle");
+  const actToggle = document.getElementById("actToggle");
+  const actState = document.getElementById("actState");
+
+  // ================= FORMATEO =================
+  function formatSensor(id,valTemp,valHum){
+    let title = id || "Sensor";
+    let main="--", aux="";
+    const t = parseFloat(valTemp);
+    const h = parseFloat(valHum);
+
+    if(id.toUpperCase().includes("DHT") || id.toUpperCase().includes("TEMP")){
+      main = !isNaN(t)? t.toFixed(1)+" °C":"--";
+      aux = !isNaN(h)? "Hum: "+h.toFixed(1)+" %":"";
+    } else if(id.toUpperCase().includes("HUMEDAD") || id.toUpperCase().includes("HUM")){
+      main = !isNaN(h)? h.toFixed(1)+" %":"--";
+    } else {
+      main = valTemp||"--";
+      aux = valHum||"";
     }
-    function makeUpdateUrl(pin, value){
-      const base = `https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${pin}=${encodeURIComponent(value)}`;
-      return USE_PROXY ? PROXY + encodeURIComponent(base) : base;
-    }
-    async function blynkGet(pin){
-      const res = await fetch(makeUrl(pin), {cache:"no-store"});
-      if(!res.ok) throw new Error("HTTP "+res.status);
-      return (await res.text()).trim();
-    }
-    async function blynkSet(pin, value){
-      const res = await fetch(makeUpdateUrl(pin,value));
-      if(!res.ok) throw new Error("Update failed "+res.status);
-      return true;
-    }
+    return {title, main, aux};
+  }
 
-    const sensorTitle = document.getElementById("sensorTitle");
-    const sensorValue = document.getElementById("sensorValue");
-    const sensorAux = document.getElementById("sensorAux");
-    const sensorTime = document.getElementById("sensorTime");
-    const actTitle = document.getElementById("actTitle");
-    const actToggle = document.getElementById("actToggle");
-    const actState = document.getElementById("actState");
+  // ================= REFRESH UI =================
+  async function refreshOnce(){
+    try{
+      const [id,valTemp,valHum,act] = await Promise.all([
+        blynkGet(P.V_SENSOR_ID),
+        blynkGet(P.V_SENSOR_TEMP),
+        blynkGet(P.V_SENSOR_HUM),
+        blynkGet(P.V_ACT_STATE)
+      ]);
 
-    function formatSensorDisplay(id, valPrimary, valAux){
-      const idStr = id || "";
-      let main="--", aux="";
-      const pNum = parseFloat(valPrimary);
-      const aNum = parseFloat(valAux);
+      // Sensor
+      const parsed = formatSensor(id,valTemp,valHum);
+      sensorTitle.textContent = parsed.title;
+      sensorValue.textContent = parsed.main;
+      sensorAux.textContent = parsed.aux;
+      sensorTime.textContent = "Actualizado: "+new Date().toLocaleTimeString();
 
-      if(idStr.toUpperCase().includes("DHT")){
-        if(!isNaN(pNum)) main = pNum.toFixed(1)+" °C";
-        if(!isNaN(aNum)) aux = "Hum: "+aNum.toFixed(1)+" %";
-      } else if(idStr.toUpperCase().includes("HUMEDAD")){
-        if(!isNaN(pNum)) main = pNum.toFixed(1)+" %";
-        if(valAux) aux = valAux;
+      // Actuador
+      actTitle.textContent = "Actuador";
+      const on = (act==="1"||act==="true");
+      if(on){
+        actToggle.classList.add("on"); actToggle.classList.remove("off");
+        actToggle.textContent = "Encendido";
+        actState.textContent = "Estado: Encendido ✅";
       } else {
-        if(!isNaN(pNum)) main = pNum.toFixed(1);
-        else if(valPrimary) main = valPrimary;
-        if(valAux) aux = valAux;
+        actToggle.classList.add("off"); actToggle.classList.remove("on");
+        actToggle.textContent = "Apagado";
+        actState.textContent = "Estado: Apagado ⛔";
       }
-      return { title: idStr || "Sensor", main, aux };
+    }catch(err){
+      console.error("Error refrescando datos:",err);
+      sensorTitle.textContent="Sensor (error)";
+      sensorValue.textContent="--";
+      sensorAux.textContent="";
+      sensorTime.textContent="Error: "+(err.message||"");
     }
+  }
 
-    let isUpdating = false;
-    async function refreshOnce(){
-      if(isUpdating) return;
-      isUpdating = true;
-      try{
-        const [vSensorId,vSensorVal,vSensorAux,vActState,vActId] = await Promise.all([
-          blynkGet(P.V_SENSOR_ID),
-          blynkGet(P.V_SENSOR_VAL),
-          blynkGet(P.V_SENSOR_AUX),
-          blynkGet(P.V_ACT_STATE),
-          blynkGet(P.V_ACT_ID)
-        ]);
+  // ================= BOTÓN ACTUADOR =================
+  let toggling=false;
+  actToggle.addEventListener("click",async ()=>{
+    if(toggling) return;
+    toggling=true;
+    try{
+      const cur = await blynkGet(P.V_ACT_STATE);
+      const newVal = (cur==="1"||cur==="true")?0:1;
+      await blynkSet(P.V_ACT_STATE,newVal);
+      await refreshOnce(); // actualizar UI
+    }catch(err){
+      console.error("Error cambiando actuador:",err);
+      actState.textContent="Error al cambiar";
+    }finally{toggling=false;}
+  });
 
-        const parsed = formatSensorDisplay(vSensorId,vSensorVal,vSensorAux);
-        sensorTitle.textContent = parsed.title;
-        sensorValue.textContent = parsed.main;
-        sensorAux.textContent = parsed.aux;
-        sensorTime.textContent = "Actualizado: "+new Date().toLocaleTimeString();
+  // ================= AUTO-REFRESH =================
+  refreshOnce();
+  setInterval(refreshOnce,REFRESH_MS);
 
-        actTitle.textContent = (vActId && vActId!=="null")?vActId:"Actuador";
-        const on = (vActState==="1"||vActState==="true"||vActState===1);
-        if(on){
-          actToggle.classList.add("on"); actToggle.classList.remove("off");
-          actToggle.textContent = "Encendido";
-          actState.textContent = "Estado: Encendido ✅";
-        } else {
-          actToggle.classList.add("off"); actToggle.classList.remove("on");
-          actToggle.textContent = "Apagado";
-          actState.textContent = "Estado: Apagado ⛔";
-        }
-      } catch(err){
-        console.error(err);
-        sensorTitle.textContent="Sensor (error)";
-        sensorValue.textContent="--";
-        sensorAux.textContent="";
-        sensorTime.textContent="Error: "+(err.message||"");
-      } finally{ isUpdating=false; }
-    }
-
-    let toggling = false;
-    actToggle.addEventListener("click", async()=>{
-      if(toggling) return;
-      toggling=true;
-      try{
-        const cur = await blynkGet(P.V_ACT_STATE);
-        const curOn = (cur==="1"||cur==="true"||cur===1);
-        const newVal = curOn?0:1;
-        await blynkSet(P.V_ACT_STATE,newVal);
-        await refreshOnce();
-      } catch(err){
-        console.error(err);
-        actState.textContent="Error al cambiar: "+(err.message||"");
-      } finally{ toggling=false; }
-    });
-
-    refreshOnce();
-    setInterval(refreshOnce, REFRESH_MS);
-  </script>
+</script>
 </body>
 </html>
