@@ -3,169 +3,104 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel Agrícola IoT 🌱</title>
+<title>Panel Agrícola IoT ⚡</title>
 <style>
-  body {
-    font-family: "Segoe UI", sans-serif;
-    background: #f5f5f5;
-    margin: 0;
-    padding: 1.5rem;
-    color: #222;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
+  body{
+    font-family:"Segoe UI",sans-serif;
+    margin:0;padding:1.5rem;
+    background:#f7f7f7;color:#222;
+    display:flex;flex-direction:column;align-items:center;
   }
-  h1 {
-    margin-bottom: 0.5rem;
-    color: #2d6a4f;
-    text-align: center;
-  }
-  p {
-    color: #666;
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    text-align: center;
-  }
-  .grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
-    width: 100%;
-    max-width: 700px;
-  }
-  .card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-    padding: 1rem;
-    text-align: center;
-    transition: transform 0.2s;
-  }
-  .card:active { transform: scale(0.98); }
-  .title {
-    font-weight: bold;
-    font-size: 1rem;
-    color: #40916c;
-  }
-  .value {
-    font-size: 2.2rem;
-    font-weight: bold;
-    margin: .4rem 0;
-    color: #2d6a4f;
-  }
-  .unit {
-    font-size: .9rem;
-    color: #777;
-  }
-  .btn {
-    border: none;
-    border-radius: 10px;
-    padding: .9rem;
-    font-weight: bold;
-    font-size: 1rem;
-    width: 100%;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .btn.on {
-    background: #52b788;
-    color: white;
-  }
-  .btn.off {
-    background: #ccc;
-    color: #222;
-  }
-  footer {
-    margin-top: 1rem;
-    font-size: .8rem;
-    color: #777;
-    text-align: center;
-  }
+  h1{color:#2d6a4f;margin:0 0 .3rem;text-align:center;}
+  p{color:#666;margin:0 0 1rem;text-align:center;}
+  .grid{display:grid;gap:1rem;
+        grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+        width:100%;max-width:700px;}
+  .card{background:#fff;border-radius:16px;
+        box-shadow:0 4px 12px rgba(0,0,0,.1);
+        padding:1rem;text-align:center;}
+  .title{font-weight:bold;color:#40916c;font-size:1rem;}
+  .value{font-size:2.2rem;font-weight:bold;margin:.3rem 0;color:#2d6a4f;}
+  .unit{font-size:.9rem;color:#777;}
+  .btn{border:none;border-radius:10px;padding:.9rem;font-weight:bold;
+       font-size:1rem;width:100%;cursor:pointer;transition:all .1s ease;}
+  .btn.on{background:#52b788;color:#fff;}
+  .btn.off{background:#ccc;color:#222;}
+  footer{margin-top:1rem;font-size:.8rem;color:#777;text-align:center;}
 </style>
 </head>
 <body>
-  <h1>Panel Agrícola IoT 🌱</h1>
-  <p>Monitorea y controla tus cultivos en tiempo real</p>
+<h1>Panel Agrícola IoT 🌾</h1>
+<p>Datos en tiempo real</p>
 
-  <div class="grid">
-    <div class="card">
-      <div class="title">Temperatura</div>
-      <div id="tempValue" class="value">--</div>
-      <div class="unit">°C</div>
-    </div>
-
-    <div class="card">
-      <div class="title">Humedad</div>
-      <div id="humValue" class="value">--</div>
-      <div class="unit">%</div>
-    </div>
-
-    <div class="card">
-      <div class="title">Actuador</div>
-      <button id="actButton" class="btn off">Apagar</button>
-      <div id="actStatus" class="unit">Estado: --</div>
-    </div>
+<div class="grid">
+  <div class="card">
+    <div class="title">Temperatura</div>
+    <div id="tempValue" class="value">--</div>
+    <div class="unit">°C</div>
   </div>
 
-  <footer>© 2025 - Proyecto Agrícola IoT</footer>
+  <div class="card">
+    <div class="title">Humedad</div>
+    <div id="humValue" class="value">--</div>
+    <div class="unit">%</div>
+  </div>
+
+  <div class="card">
+    <div class="title">Actuador</div>
+    <button id="actButton" class="btn off">Apagar</button>
+    <div id="actStatus" class="unit">Estado: --</div>
+  </div>
+</div>
+
+<footer>© 2025 Proyecto Agrícola IoT</footer>
 
 <script>
-  const TOKEN = "zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
-  const API = "https://blynk.cloud/external/api";
-  const PINS = { TEMP:"V1", HUM:"V2", ACT:"V4" };
-  const REFRESH = 1000; // 1 segundo
+const TOKEN="zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
+const API="https://blynk.cloud/external/api";
+const PINS={TEMP:"V1",HUM:"V2",ACT:"V4"};
+const REFRESH=500;
 
-  const tempValue = document.getElementById("tempValue");
-  const humValue = document.getElementById("humValue");
-  const actButton = document.getElementById("actButton");
-  const actStatus = document.getElementById("actStatus");
+const tempValue=document.getElementById("tempValue");
+const humValue=document.getElementById("humValue");
+const actButton=document.getElementById("actButton");
+const actStatus=document.getElementById("actStatus");
 
-  async function blynkGet(pin){
-    const res = await fetch(`${API}/get?token=${TOKEN}&${pin}`);
-    if(!res.ok) throw new Error("Error al leer");
-    return res.text();
-  }
+let controller=null; // abort previous requests
 
-  async function blynkSet(pin,val){
-    const res = await fetch(`${API}/update?token=${TOKEN}&${pin}=${val}`);
-    if(!res.ok) throw new Error("Error al actualizar");
-  }
+async function fastGet(pin){
+  try{
+    if(controller) controller.abort();
+    controller=new AbortController();
+    const res=await fetch(`${API}/get?token=${TOKEN}&${pin}`,{signal:controller.signal,cache:"no-store"});
+    if(!res.ok) throw new Error();
+    return await res.text();
+  }catch{return "--";}
+}
 
-  async function refresh(){
-    try{
-      const [t,h,a] = await Promise.all([
-        blynkGet(PINS.TEMP),
-        blynkGet(PINS.HUM),
-        blynkGet(PINS.ACT)
-      ]);
+async function refresh(){
+  const [t,h,a]=await Promise.all([fastGet(PINS.TEMP),fastGet(PINS.HUM),fastGet(PINS.ACT)]);
+  if(t!=="--") tempValue.textContent=parseFloat(t).toFixed(1);
+  if(h!=="--") humValue.textContent=parseFloat(h).toFixed(1);
+  const on=a.trim()==="1";
+  actButton.className=on?"btn on":"btn off";
+  actButton.textContent=on?"Encendido":"Apagado";
+  actStatus.textContent="Estado: "+(on?"Encendido ✅":"Apagado ⛔");
+}
 
-      tempValue.textContent = parseFloat(t).toFixed(1);
-      humValue.textContent = parseFloat(h).toFixed(1);
-
-      const on = a.trim()==="1";
-      actButton.className = on?"btn on":"btn off";
-      actButton.textContent = on?"Encendido":"Apagado";
-      actStatus.textContent = "Estado: " + (on?"Encendido ✅":"Apagado ⛔");
-    }catch(e){
-      console.error("Error actualizando:",e);
-    }
-  }
-
-  async function toggle(){
-    try{
-      const state = await blynkGet(PINS.ACT);
-      const newVal = state.trim()==="1"?0:1;
-      await blynkSet(PINS.ACT,newVal);
-      await refresh();
-    }catch(e){ console.error(e); }
-  }
-
-  actButton.addEventListener("click", toggle);
-  actButton.addEventListener("touchstart", e => { e.preventDefault(); toggle(); });
-
+async function toggle(){
+  const state=await fastGet(PINS.ACT);
+  const newVal=state.trim()==="1"?0:1;
+  await fetch(`${API}/update?token=${TOKEN}&${PINS.ACT}=${newVal}`);
+  actButton.classList.add("pulse");
   refresh();
-  setInterval(refresh, REFRESH);
+}
+
+actButton.addEventListener("click",toggle);
+actButton.addEventListener("touchstart",e=>{e.preventDefault();toggle();});
+
+setInterval(refresh,REFRESH);
+refresh();
 </script>
 </body>
 </html>
