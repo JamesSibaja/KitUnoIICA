@@ -11,6 +11,8 @@
       --muted: #666;
       --bg: #f5f6f7;
       --card: #fff;
+      --danger: #d62828;
+      --success: #2a9d8f;
     }
     body{
       font-family: "Segoe UI", Tahoma, sans-serif;
@@ -23,23 +25,23 @@
       align-items:center;
       min-height:100vh;
     }
-    header h1{margin:0;color:var(--primary);font-size:1.6rem}
+    header h1{margin:0;color:var(--primary);font-size:1.8rem}
     header p{margin:.25rem 0 0;color:var(--muted)}
     .grid{width:95%;max-width:720px;margin-top:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-    .card{background:var(--card);border-radius:12px;padding:1rem;box-shadow:0 6px 18px rgba(0,0,0,0.06);display:flex;flex-direction:column;align-items:center}
+    .card{background:var(--card);border-radius:12px;padding:1.2rem;box-shadow:0 6px 18px rgba(0,0,0,0.08);display:flex;flex-direction:column;align-items:center;transition:0.3s all}
     .label{font-size:0.95rem;color:var(--muted)}
-    .title{font-weight:700;font-size:1.05rem;color:var(--primary);margin-top:.25rem}
-    .value{font-size:2rem;font-weight:800;margin-top:.5rem;color:var(--primary)}
-    .small{font-size:0.82rem;color:var(--muted);margin-top:.5rem}
-    .controls{width:100%;display:flex;flex-direction:column;gap:.5rem}
+    .title{font-weight:700;font-size:1.2rem;color:var(--primary);margin-top:.25rem}
+    .value{font-size:2rem;font-weight:800;margin-top:.5rem;color:var(--accent)}
+    .small{font-size:0.85rem;color:var(--muted);margin-top:.5px}
+    .controls{width:100%;display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem}
     .btn{
-      appearance:none;border:0;border-radius:10px;padding:.8rem 1rem;font-weight:700;cursor:pointer;
-      box-shadow:0 6px 14px rgba(0,0,0,0.08);width:100%;
+      appearance:none;border:0;border-radius:12px;padding:.8rem 1rem;font-weight:700;cursor:pointer;
+      box-shadow:0 6px 14px rgba(0,0,0,0.1);width:100%;transition:0.2s all;
     }
-    .btn.on{background:var(--accent);color:white}
-    .btn.off{background:#d9d9d9;color:#222}
+    .btn.on{background:var(--success);color:white}
+    .btn.off{background:var(--danger);color:white}
     .badge{background:#eef6f1;color:var(--primary);padding:.25rem .5rem;border-radius:8px;font-weight:700}
-    footer{margin-top:1.2rem;color:var(--muted);font-size:0.8rem}
+    footer{margin-top:1.5rem;color:var(--muted);font-size:0.8rem}
     @media(max-width:700px){
       .grid{grid-template-columns:1fr}
     }
@@ -53,7 +55,7 @@
 
   <div class="grid">
     <!-- Tarjeta: Sensor -->
-    <div class="card">
+    <div class="card" id="cardSensor">
       <div class="label">Sensor</div>
       <div id="sensorTitle" class="title">--</div>
       <div id="sensorValue" class="value">--</div>
@@ -62,37 +64,33 @@
     </div>
 
     <!-- Tarjeta: Actuador -->
-    <div class="card">
+    <div class="card" id="cardActuador">
       <div class="label">Actuador</div>
       <div id="actTitle" class="title">--</div>
-      <div class="controls" style="width:100%;margin-top:.6rem">
+      <div class="controls">
         <button id="actToggle" class="btn off">Apagado</button>
         <div id="actState" class="small">Estado: --</div>
-        <div id="actInfo" class="small" style="margin-top:.25rem;color:var(--muted)">Toque para cambiar</div>
+        <div id="actInfo" class="small" style="color:var(--muted)">Tocar para cambiar</div>
       </div>
     </div>
   </div>
 
-  <footer>© 2025 - Monitoreo Agrícola — Practica para productores</footer>
+  <footer>© 2025 - Monitoreo Agrícola — Práctico para productores</footer>
 
   <script>
-    // ========== CONFIGURACIÓN ==========
     const BLYNK_TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
-    // Si CORS te da problemas: deja true. Si tienes proxy propio colócalo.
     const USE_PROXY = true;
-    const PROXY = "https://api.allorigins.win/raw?url="; // proxy público (puede fallar si está caído)
+    const PROXY = "https://api.allorigins.win/raw?url=";
     const REFRESH_MS = 2000;
 
-    // Pines virtuales según tu ESP32 (tal como en tu sketch)
     const P = {
-      V_SENSOR_ID: "V0",  // identificador del sensor (string)
-      V_ACT_ID:    "V1",  // identificador del actuador (string)
-      V_SENSOR_VAL: "V2", // valor primario del sensor (temp o hum o texto)
-      V_SENSOR_AUX: "V3", // valor auxiliar (hum o texto)
-      V_ACT_STATE:  "V4"  // estado actuador 0/1
+      V_SENSOR_ID: "V0",
+      V_SENSOR_VAL: "V2",
+      V_SENSOR_AUX: "V3",
+      V_ACT_STATE: "V4",
+      V_ACT_ID: "V1"
     };
 
-    // -------- utilidades de fetch Blynk (robustas) --------
     function makeUrl(pin){
       const base = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&pin=${pin}`;
       return USE_PROXY ? PROXY + encodeURIComponent(base) : base;
@@ -101,23 +99,17 @@
       const base = `https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&${pin}=${encodeURIComponent(value)}`;
       return USE_PROXY ? PROXY + encodeURIComponent(base) : base;
     }
-
     async function blynkGet(pin){
-      const url = makeUrl(pin);
-      const res = await fetch(url, {cache:"no-store"});
-      if(!res.ok) throw new Error("HTTP " + res.status);
-      const text = await res.text();
-      return text.trim();
+      const res = await fetch(makeUrl(pin), {cache:"no-store"});
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return (await res.text()).trim();
     }
-
     async function blynkSet(pin, value){
-      const url = makeUpdateUrl(pin, value);
-      const res = await fetch(url, {method:"GET"}); // Blynk accept GET update
-      if(!res.ok) throw new Error("Update failed " + res.status);
+      const res = await fetch(makeUpdateUrl(pin,value));
+      if(!res.ok) throw new Error("Update failed "+res.status);
       return true;
     }
 
-    // ========== DOM refs ==========
     const sensorTitle = document.getElementById("sensorTitle");
     const sensorValue = document.getElementById("sensorValue");
     const sensorAux = document.getElementById("sensorAux");
@@ -126,64 +118,47 @@
     const actToggle = document.getElementById("actToggle");
     const actState = document.getElementById("actState");
 
-    // ========== Formateo de lectura según identificador ==========
     function formatSensorDisplay(id, valPrimary, valAux){
-      // id puede ser "DHT21", "Humedad", "Sensor", "Est.Meteo" o texto libre
       const idStr = id || "";
-      let main = "--";
-      let aux = "";
-
-      // intenta parsear numéricos
+      let main="--", aux="";
       const pNum = parseFloat(valPrimary);
       const aNum = parseFloat(valAux);
 
-      if(idStr.toUpperCase().includes("DHT") || idStr.toUpperCase().includes("TEMP")){
-        // V2 = temp, V3 = hum
-        if(!isNaN(pNum)) main = pNum.toFixed(1) + " °C";
-        if(!isNaN(aNum)) aux = "Hum: " + aNum.toFixed(1) + " %";
-      } else if (idStr.toUpperCase().includes("HUMEDAD") || idStr.toUpperCase().includes("HUM")){
-        // V2 = humedad %
-        if(!isNaN(pNum)) main = pNum.toFixed(1) + " %";
-        if(valAux) aux = String(valAux);
-      } else if (idStr.toUpperCase().includes("EST") || idStr.toUpperCase().includes("METEO")){
-        // Estación -> V2 puede ser texto
-        main = valPrimary || "--";
+      if(idStr.toUpperCase().includes("DHT")){
+        if(!isNaN(pNum)) main = pNum.toFixed(1)+" °C";
+        if(!isNaN(aNum)) aux = "Hum: "+aNum.toFixed(1)+" %";
+      } else if(idStr.toUpperCase().includes("HUMEDAD")){
+        if(!isNaN(pNum)) main = pNum.toFixed(1)+" %";
         if(valAux) aux = valAux;
       } else {
-        // fallback: mostrar primario y auxiliar si existen
         if(!isNaN(pNum)) main = pNum.toFixed(1);
-        else if (valPrimary) main = valPrimary;
+        else if(valPrimary) main = valPrimary;
         if(valAux) aux = valAux;
       }
-
       return { title: idStr || "Sensor", main, aux };
     }
 
-    // ========== Actualización UI ==========
     let isUpdating = false;
     async function refreshOnce(){
-      if(isUpdating) return; // evita solapamiento
+      if(isUpdating) return;
       isUpdating = true;
-      try {
-        // leer en paralelo
-        const [vSensorId, vActId, vSensorVal, vSensorAux, vActState] = await Promise.all([
+      try{
+        const [vSensorId,vSensorVal,vSensorAux,vActState,vActId] = await Promise.all([
           blynkGet(P.V_SENSOR_ID),
-          blynkGet(P.V_ACT_ID),
           blynkGet(P.V_SENSOR_VAL),
           blynkGet(P.V_SENSOR_AUX),
-          blynkGet(P.V_ACT_STATE)
+          blynkGet(P.V_ACT_STATE),
+          blynkGet(P.V_ACT_ID)
         ]);
 
-        // sensor
-        const parsed = formatSensorDisplay(vSensorId, vSensorVal, vSensorAux);
+        const parsed = formatSensorDisplay(vSensorId,vSensorVal,vSensorAux);
         sensorTitle.textContent = parsed.title;
         sensorValue.textContent = parsed.main;
-        sensorAux.textContent = parsed.aux ? parsed.aux : "";
-        sensorTime.textContent = "Actualizado: " + new Date().toLocaleTimeString();
+        sensorAux.textContent = parsed.aux;
+        sensorTime.textContent = "Actualizado: "+new Date().toLocaleTimeString();
 
-        // actuador
-        actTitle.textContent = (vActId && vActId !== "null") ? vActId : "Actuador";
-        const on = (vActState === "1" || vActState === "true" || vActState === 1);
+        actTitle.textContent = (vActId && vActId!=="null")?vActId:"Actuador";
+        const on = (vActState==="1"||vActState==="true"||vActState===1);
         if(on){
           actToggle.classList.add("on"); actToggle.classList.remove("off");
           actToggle.textContent = "Encendido";
@@ -193,45 +168,33 @@
           actToggle.textContent = "Apagado";
           actState.textContent = "Estado: Apagado ⛔";
         }
-      } catch (err){
-        console.error("Error refrescando datos:", err);
-        sensorTitle.textContent = "Sensor (error)";
-        sensorValue.textContent = "--";
-        sensorAux.textContent = "";
-        sensorTime.textContent = "Error: " + (err.message || "");
-      } finally {
-        isUpdating = false;
-      }
+      } catch(err){
+        console.error(err);
+        sensorTitle.textContent="Sensor (error)";
+        sensorValue.textContent="--";
+        sensorAux.textContent="";
+        sensorTime.textContent="Error: "+(err.message||"");
+      } finally{ isUpdating=false; }
     }
 
-    // ========== Control del actuador (click seguro) ==========
     let toggling = false;
-    actToggle.addEventListener("click", async () => {
-      if (toggling) return;
-      toggling = true;
-      try {
-        // leer estado actual
+    actToggle.addEventListener("click", async()=>{
+      if(toggling) return;
+      toggling=true;
+      try{
         const cur = await blynkGet(P.V_ACT_STATE);
-        const curOn = (cur === "1" || cur === "true" || cur === 1);
-        const newVal = curOn ? 0 : 1;
-        // escribir nuevo estado
-        await blynkSet(P.V_ACT_STATE, newVal);
-        // actualizar UI inmediatamente (optimista)
+        const curOn = (cur==="1"||cur==="true"||cur===1);
+        const newVal = curOn?0:1;
+        await blynkSet(P.V_ACT_STATE,newVal);
         await refreshOnce();
-      } catch (err){
-        console.error("No se pudo cambiar actuador:", err);
-        // opcional: mostrar alerta breve (no intrusivo)
-        actState.textContent = "Error al cambiar: " + (err.message || "");
-      } finally {
-        toggling = false;
-      }
+      } catch(err){
+        console.error(err);
+        actState.textContent="Error al cambiar: "+(err.message||"");
+      } finally{ toggling=false; }
     });
 
-    // ========== Auto-refresh ==========
     refreshOnce();
-    const intervalId = setInterval(refreshOnce, REFRESH_MS);
-
-    // si quieres detener refresh en algún momento: clearInterval(intervalId)
+    setInterval(refreshOnce, REFRESH_MS);
   </script>
 </body>
 </html>
