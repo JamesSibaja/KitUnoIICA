@@ -70,24 +70,23 @@
 
 <script>
   // ================= CONFIGURACIÓN =================
-  const BLYNK_TOKEN = "zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
-  const REFRESH_MS = 2000; // cada 2s
+  const BLYNK_TOKEN = "L6i0wK6TYebuvxeayJnY-BTbPPKz3vkr";
+  const REFRESH_MS = 2000; // refresco cada 2s
 
-  // Pines virtuales del ESP32
+  // Pines virtuales
   const P = {
-    V_SENSOR_ID: "V0",
-    V_SENSOR_TEMP: "V1",
-    V_SENSOR_HUM: "V2",
-    V_ACT_STATE: "V4"
+    V_SENSOR_ID: "V0",    // tipo de sensor
+    V_SENSOR_TEMP: "V2",  // temperatura o valor primario
+    V_SENSOR_HUM: "V3",   // humedad o valor secundario
+    V_ACT_STATE: "V4"     // actuador
   };
 
   // ================= UTILIDADES =================
   async function blynkGet(pin){
-    const url = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&pin=${pin}`;
+    const url = `https://blynk.cloud/external/api/get?token=${BLYNK_TOKEN}&${pin}`;
     const res = await fetch(url);
     if(!res.ok) throw new Error("HTTP "+res.status);
-    const text = await res.text();
-    return text.trim();
+    return (await res.text()).trim();
   }
 
   async function blynkSet(pin,value){
@@ -107,20 +106,20 @@
   const actState = document.getElementById("actState");
 
   // ================= FORMATEO =================
-  function formatSensor(id,valTemp,valHum){
+  function formatSensor(id,valPrimary,valAux){
     let title = id || "Sensor";
     let main="--", aux="";
-    const t = parseFloat(valTemp);
-    const h = parseFloat(valHum);
+    const p = parseFloat(valPrimary);
+    const a = parseFloat(valAux);
 
-    if(id.toUpperCase().includes("DHT") || id.toUpperCase().includes("TEMP")){
-      main = !isNaN(t)? t.toFixed(1)+" °C":"--";
-      aux = !isNaN(h)? "Hum: "+h.toFixed(1)+" %":"";
-    } else if(id.toUpperCase().includes("HUMEDAD") || id.toUpperCase().includes("HUM")){
-      main = !isNaN(h)? h.toFixed(1)+" %":"--";
+    if(title.toUpperCase().includes("DHT") || title.toUpperCase().includes("TEMP")){
+      main = !isNaN(p)? p.toFixed(1)+" °C":"--";
+      aux = !isNaN(a)? "Hum: "+a.toFixed(1)+" %":"";
+    } else if(title.toUpperCase().includes("HUMEDAD") || title.toUpperCase().includes("HUM")){
+      main = !isNaN(a)? a.toFixed(1)+" %":"--";
     } else {
-      main = valTemp||"--";
-      aux = valHum||"";
+      main = valPrimary||"--";
+      aux = valAux||"";
     }
     return {title, main, aux};
   }
@@ -144,7 +143,7 @@
 
       // Actuador
       actTitle.textContent = "Actuador";
-      const on = (act==="1"||act==="true");
+      const on = (act==="1" || act==="true");
       if(on){
         actToggle.classList.add("on"); actToggle.classList.remove("off");
         actToggle.textContent = "Encendido";
@@ -154,8 +153,9 @@
         actToggle.textContent = "Apagado";
         actState.textContent = "Estado: Apagado ⛔";
       }
-    }catch(err){
-      console.error("Error refrescando datos:",err);
+
+    } catch(err){
+      console.error("Error refrescando Blynk:",err);
       sensorTitle.textContent="Sensor (error)";
       sensorValue.textContent="--";
       sensorAux.textContent="";
@@ -172,7 +172,7 @@
       const cur = await blynkGet(P.V_ACT_STATE);
       const newVal = (cur==="1"||cur==="true")?0:1;
       await blynkSet(P.V_ACT_STATE,newVal);
-      await refreshOnce(); // actualizar UI
+      await refreshOnce(); // actualizar UI inmediatamente
     }catch(err){
       console.error("Error cambiando actuador:",err);
       actState.textContent="Error al cambiar";
