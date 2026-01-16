@@ -3,104 +3,234 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel Agrícola IoT ⚡</title>
+<title>Dashboard Ambiental IoT</title>
+
 <style>
-  body{
-    font-family:"Segoe UI",sans-serif;
-    margin:0;padding:1.5rem;
-    background:#f7f7f7;color:#222;
-    display:flex;flex-direction:column;align-items:center;
-  }
-  h1{color:#2d6a4f;margin:0 0 .3rem;text-align:center;}
-  p{color:#666;margin:0 0 1rem;text-align:center;}
-  .grid{display:grid;gap:1rem;
-        grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-        width:100%;max-width:700px;}
-  .card{background:#fff;border-radius:16px;
-        box-shadow:0 4px 12px rgba(0,0,0,.1);
-        padding:1rem;text-align:center;}
-  .title{font-weight:bold;color:#40916c;font-size:1rem;}
-  .value{font-size:2.2rem;font-weight:bold;margin:.3rem 0;color:#2d6a4f;}
-  .unit{font-size:.9rem;color:#777;}
-  .btn{border:none;border-radius:10px;padding:.9rem;font-weight:bold;
-       font-size:1rem;width:100%;cursor:pointer;transition:all .1s ease;}
-  .btn.on{background:#52b788;color:#fff;}
-  .btn.off{background:#ccc;color:#222;}
-  footer{margin-top:1rem;font-size:.8rem;color:#777;text-align:center;}
+:root{
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --primary:#1b4332;
+  --accent:#2d6a4f;
+  --soft:#40916c;
+  --muted:#6c757d;
+  --danger:#d62828;
+  --warning:#f77f00;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:"Inter","Segoe UI",sans-serif;
+  background:var(--bg);
+  color:#212529;
+}
+
+header{
+  padding:1.2rem;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:white;
+  text-align:center;
+}
+
+header h1{
+  margin:0;
+  font-size:1.8rem;
+}
+
+header p{
+  margin:.3rem 0 0;
+  opacity:.85;
+}
+
+main{
+  max-width:1100px;
+  margin:auto;
+  padding:1.2rem;
+}
+
+.section{
+  margin-bottom:1.5rem;
+}
+
+.section h2{
+  margin:.2rem 0 .8rem;
+  color:var(--primary);
+  font-size:1.2rem;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:1rem;
+}
+
+.card{
+  background:var(--card);
+  border-radius:18px;
+  padding:1.1rem;
+  box-shadow:0 6px 20px rgba(0,0,0,.08);
+  text-align:center;
+}
+
+.card .label{
+  font-size:.9rem;
+  color:var(--muted);
+}
+
+.card .value{
+  font-size:2.4rem;
+  font-weight:700;
+  color:var(--accent);
+  margin:.3rem 0;
+}
+
+.card .unit{
+  font-size:.85rem;
+  color:#777;
+}
+
+.status{
+  font-size:.85rem;
+  margin-top:.4rem;
+}
+
+footer{
+  text-align:center;
+  padding:1rem;
+  font-size:.8rem;
+  color:#666;
+}
 </style>
 </head>
+
 <body>
-<h1>Panel Agrícola IoT 🌾</h1>
-<p>Datos en tiempo real</p>
 
-<div class="grid">
-  <div class="card">
-    <div class="title">Temperatura</div>
-    <div id="tempValue" class="value">--</div>
-    <div class="unit">°C</div>
-  </div>
+<header>
+  <h1>🌎 Dashboard Ambiental IoT</h1>
+  <p>Monitoreo en tiempo real · ESP32 · Blynk Cloud</p>
+</header>
 
-  <div class="card">
-    <div class="title">Humedad</div>
-    <div id="humValue" class="value">--</div>
-    <div class="unit">%</div>
-  </div>
+<main>
 
-  <div class="card">
-    <div class="title">Actuador</div>
-    <button id="actButton" class="btn off">Apagar</button>
-    <div id="actStatus" class="unit">Estado: --</div>
-  </div>
-</div>
+  <!-- AMBIENTE -->
+  <section class="section">
+    <h2>🌡 Ambiente</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Temperatura Ambiente</div>
+        <div id="t1" class="value">--</div>
+        <div class="unit">°C (DHT21)</div>
+      </div>
+      <div class="card">
+        <div class="label">Humedad Ambiente</div>
+        <div id="h1" class="value">--</div>
+        <div class="unit">% (DHT21)</div>
+      </div>
+      <div class="card">
+        <div class="label">Temperatura Precisión</div>
+        <div id="t2" class="value">--</div>
+        <div class="unit">°C (SCD30)</div>
+      </div>
+      <div class="card">
+        <div class="label">Humedad Precisión</div>
+        <div id="h2" class="value">--</div>
+        <div class="unit">% (SCD30)</div>
+      </div>
+    </div>
+  </section>
 
-<footer>© 2025 Proyecto Agrícola IoT</footer>
+  <!-- CALIDAD AIRE -->
+  <section class="section">
+    <h2>🫁 Calidad del Aire</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">CO₂</div>
+        <div id="co2" class="value">--</div>
+        <div class="unit">ppm</div>
+      </div>
+      <div class="card">
+        <div class="label">TVOC</div>
+        <div id="tvoc" class="value">--</div>
+        <div class="unit">ppb</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LUZ -->
+  <section class="section">
+    <h2>☀ Radiación y Luz</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Iluminancia</div>
+        <div id="lux" class="value">--</div>
+        <div class="unit">Lux</div>
+      </div>
+      <div class="card">
+        <div class="label">Luz Visible</div>
+        <div id="visible" class="value">--</div>
+        <div class="unit">Raw</div>
+      </div>
+      <div class="card">
+        <div class="label">Infrarrojo</div>
+        <div id="ir" class="value">--</div>
+        <div class="unit">Raw</div>
+      </div>
+      <div class="card">
+        <div class="label">Índice UV</div>
+        <div id="uv" class="value">--</div>
+        <div class="unit">UV Index</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  © 2025 · Sistema Ambiental IoT · ESP32 + Blynk + Google Sheets
+</footer>
 
 <script>
-const TOKEN="zrdV3o792LQYmIgyI3h7Tl8e_2HjXbjq";
-const API="https://blynk.cloud/external/api";
-const PINS={TEMP:"V1",HUM:"V2",ACT:"V4"};
-const REFRESH=500;
+/* ================= CONFIG ================= */
+const TOKEN="BY-BXxFYfcg233KYZkGoGlTYOevtPr6N";
+const API="https://blynk.cloud/external/api/get";
+const REFRESH=1000;
 
-const tempValue=document.getElementById("tempValue");
-const humValue=document.getElementById("humValue");
-const actButton=document.getElementById("actButton");
-const actStatus=document.getElementById("actStatus");
+const PINS={
+  t1:"V4",
+  h1:"V5",
+  t2:"V6",
+  h2:"V7",
+  co2:"V8",
+  tvoc:"V9",
+  lux:"V0",
+  visible:"V1",
+  ir:"V2",
+  uv:"V3"
+};
 
-let controller=null; // abort previous requests
-
-async function fastGet(pin){
+/* ================= LOGIC ================= */
+async function getPin(pin){
   try{
-    if(controller) controller.abort();
-    controller=new AbortController();
-    const res=await fetch(`${API}/get?token=${TOKEN}&${pin}`,{signal:controller.signal,cache:"no-store"});
-    if(!res.ok) throw new Error();
-    return await res.text();
+    const r=await fetch(`${API}?token=${TOKEN}&${pin}`,{cache:"no-store"});
+    if(!r.ok) throw new Error();
+    return (await r.text()).trim();
   }catch{return "--";}
 }
 
-async function refresh(){
-  const [t,h,a]=await Promise.all([fastGet(PINS.TEMP),fastGet(PINS.HUM),fastGet(PINS.ACT)]);
-  if(t!=="--") tempValue.textContent=parseFloat(t).toFixed(1);
-  if(h!=="--") humValue.textContent=parseFloat(h).toFixed(1);
-  const on=a.trim()==="1";
-  actButton.className=on?"btn on":"btn off";
-  actButton.textContent=on?"Encendido":"Apagado";
-  actStatus.textContent="Estado: "+(on?"Encendido ✅":"Apagado ⛔");
+async function update(){
+  for(const id in PINS){
+    const val=await getPin(PINS[id]);
+    const el=document.getElementById(id);
+    if(el && val!=="--"){
+      el.textContent=parseFloat(val).toFixed(1);
+    }
+  }
 }
 
-async function toggle(){
-  const state=await fastGet(PINS.ACT);
-  const newVal=state.trim()==="1"?0:1;
-  await fetch(`${API}/update?token=${TOKEN}&${PINS.ACT}=${newVal}`);
-  actButton.classList.add("pulse");
-  refresh();
-}
-
-actButton.addEventListener("click",toggle);
-actButton.addEventListener("touchstart",e=>{e.preventDefault();toggle();});
-
-setInterval(refresh,REFRESH);
-refresh();
+setInterval(update,REFRESH);
+update();
 </script>
+
 </body>
 </html>
