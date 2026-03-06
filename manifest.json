@@ -1,7 +1,7 @@
 {
   "name": "IoT Dashboard",
   "short_name": "IoT",
-  "start_url": "/KitUnoIICA",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0a84ff",
